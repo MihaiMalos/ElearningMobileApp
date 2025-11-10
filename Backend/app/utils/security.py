@@ -10,14 +10,8 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.user import TokenData
 
-# Configure password context with bcrypt
-# truncate_error=False allows bcrypt to work with its internal long test passwords
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__default_rounds=12,
-    bcrypt__truncate_error=False
-)
+# Configure password context with argon2 (modern, secure, no length limitations)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 
 
