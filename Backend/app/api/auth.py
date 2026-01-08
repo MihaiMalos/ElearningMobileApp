@@ -6,7 +6,6 @@ from app.database import get_db
 from app.schemas.user import Token, UserCreate, UserResponse
 from app.repositories.user_repository import UserRepository
 from app.utils.security import authenticate_user, create_access_token
-from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -57,14 +56,12 @@ def login(
         )
     
     # Create access token
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
             "sub": user.id,
             "username": user.username,
             "role": user.role.value
-        },
-        expires_delta=access_token_expires
+        }
     )
     
     return {"access_token": access_token, "token_type": "bearer"}

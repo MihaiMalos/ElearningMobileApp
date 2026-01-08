@@ -7,14 +7,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
     
-    # JWT
-    SECRET_KEY: str
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
     # File Storage
     UPLOAD_DIR: str = "./uploads"
-    MAX_FILE_SIZE: int = 52428800  # 50MB
+    MAX_FILE_SIZE: int = 52428800
     
     # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"

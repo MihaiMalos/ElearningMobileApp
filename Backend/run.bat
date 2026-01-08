@@ -17,6 +17,7 @@ REM Check if virtual environment exists
 if not exist .venv (
     echo [INFO] Virtual environment not found. Creating...
     uv venv
+    
     echo [INFO] Installing dependencies...
     call .venv\Scripts\activate.bat
     uv pip install -r requirements.txt

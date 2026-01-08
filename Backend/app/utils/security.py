@@ -1,7 +1,7 @@
+import json
+import base64
 from datetime import datetime, timedelta
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -10,36 +10,39 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.user import TokenData
 
-# Configure password context with argon2 (modern, secure, no length limitations)
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# We keep the OAuth2 scheme to reuse the Bearer token extraction logic provided by FastAPI
+# This allows us to "no session" but still pass credentials in a standard header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password."""
+    return plain_password == hashed_password
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
+    """Get password hash."""
+    return password
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token."""
+    """Create access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=30)
     
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    to_encode.update({"exp": expire.isoformat()})
+    
+    # Convert to JSON and then Base64
+    json_str = json.dumps(to_encode, default=str)
+    encoded = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+    return encoded
 
 
 def decode_access_token(token: str) -> TokenData:
-    """Decode JWT access token."""
+    """Decode access token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -47,17 +50,19 @@ def decode_access_token(token: str) -> TokenData:
     )
     
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
-        username: str = payload.get("username")
-        role: str = payload.get("role")
+        decoded_bytes = base64.b64decode(token)
+        payload = json.loads(decoded_bytes.decode('utf-8'))
+        
+        user_id = payload.get("sub")
+        username = payload.get("username")
+        role = payload.get("role")
         
         if user_id is None or username is None or role is None:
             raise credentials_exception
-        
+            
         token_data = TokenData(user_id=user_id, username=username, role=UserRole(role))
         return token_data
-    except JWTError:
+    except Exception:
         raise credentials_exception
 
 
@@ -66,8 +71,10 @@ async def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     """Get current authenticated user."""
+    # This calls our unsecured decode function
     token_data = decode_access_token(token)
     
+    # We still fetch the user from DB to ensure they exist return the ORM object
     user = db.query(User).filter(User.id == token_data.user_id).first()
     if user is None:
         raise HTTPException(
@@ -104,6 +111,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return None
+    # Verify plain text
     if not verify_password(password, user.hashed_password):
         return None
     return user
