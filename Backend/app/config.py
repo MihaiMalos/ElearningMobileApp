@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     """Application configuration settings."""
     
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql://postgres:1q2w3e@localhost:5432/elearning_db"
     
     # File Storage
     UPLOAD_DIR: str = "./uploads"
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_CHAT_MODEL: str = "llama3.2"
+    OLLAMA_CHAT_MODEL: str = "qwen2.5:0.5b"
     OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
     OLLAMA_REQUEST_TIMEOUT: int = 120
     
@@ -31,13 +31,6 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "E-Learning Platform API"
     DEBUG: bool = True
-    
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore"
-    )
 
 
 settings = Settings()

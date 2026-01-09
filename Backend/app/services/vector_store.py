@@ -1,7 +1,9 @@
 import os
 from typing import List, Optional
+from warnings import filters
 import chromadb
 from chromadb.config import Settings as ChromaSettings
+from llama_cloud import MetadataFilter, MetadataFilters
 from llama_index.core import Document, VectorStoreIndex, StorageContext
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.chroma import ChromaVectorStore
@@ -147,11 +149,14 @@ class VectorStoreService:
             vector_store=self._vector_store,
             storage_context=storage_context
         )
-        
-        # Create query engine with metadata filters
+
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="course_id", value=course_id)]
+        )
+
         query_engine = index.as_query_engine(
             similarity_top_k=top_k,
-            filters={"course_id": course_id}
+            filters=filters 
         )
         
         # Execute query
@@ -190,11 +195,14 @@ class VectorStoreService:
             vector_store=self._vector_store,
             storage_context=storage_context
         )
-        
-        # Create query engine with metadata filters
+
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="course_id", value=course_id)]
+        )
+
         query_engine = index.as_query_engine(
             similarity_top_k=top_k,
-            filters={"course_id": course_id},
+            filters=filters,
             streaming=True
         )
         
