@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,7 +62,7 @@ fun MyCoursesScreen(
                     modifier = Modifier.padding(32.dp)
                 ) {
                     Icon(
-                        Icons.Default.List,
+                        Icons.AutoMirrored.Filled.List,
                         contentDescription = null,
                         modifier = Modifier.size(80.dp),
                         tint = MaterialTheme.colorScheme.outline
@@ -118,7 +119,7 @@ fun MyCoursesScreen(
                 items(enrolledCourses) { course ->
                     CourseCard(
                         course = course,
-                        onClick = { onCourseClick(course.id) },
+                        onClick = { onCourseClick(course.id.toString()) },
                         onChatClick = { /* Navigate to chat */ }
                     )
                 }
@@ -126,4 +127,3 @@ fun MyCoursesScreen(
         }
     }
 }
-

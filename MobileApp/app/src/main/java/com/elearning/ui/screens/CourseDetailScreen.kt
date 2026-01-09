@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,7 +39,7 @@ fun CourseDetailScreen(
                 title = { Text("Course Details") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -108,7 +110,7 @@ fun CourseDetailScreen(
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = course!!.teacherName,
+                                    text = course!!.teacherName ?: "Unknown Teacher",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -121,7 +123,7 @@ fun CourseDetailScreen(
                             ) {
                                 AssistChip(
                                     onClick = { },
-                                    label = { Text(course!!.category) },
+                                    label = { Text(course!!.category ?: "Uncategorized") },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Default.Add,
@@ -167,7 +169,7 @@ fun CourseDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = course!!.description,
+                                text = course!!.description ?: "No description available",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                             )
@@ -227,7 +229,7 @@ fun CourseDetailScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
-                                    Icons.Default.List,
+                                    Icons.AutoMirrored.Filled.List,
                                     contentDescription = null,
                                     modifier = Modifier.size(32.dp),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer

@@ -23,6 +23,9 @@ import com.elearning.ui.ui.theme.ELearningTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Initialize TokenManager used for Auth Interceptor
+        com.elearning.ui.data.local.TokenManager.init(applicationContext)
+
         enableEdgeToEdge()
         setContent {
             ELearningTheme {
@@ -41,7 +44,8 @@ fun ELearningApp() {
     // Determine if bottom bar should be shown
     val showBottomBar = currentDestination?.route in listOf(
         Screen.CourseList.route,
-        Screen.MyCourses.route
+        Screen.MyCourses.route,
+        Screen.Profile.route
     )
 
     Scaffold(
@@ -71,9 +75,13 @@ fun ELearningApp() {
             }
         }
     ) { innerPadding ->
-        NavigationGraph(
-            navController = navController
-        )
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            NavigationGraph(navController = navController)
+        }
     }
 }
 
@@ -93,5 +101,10 @@ val bottomNavItems = listOf(
         title = "My Courses",
         icon = Icons.Default.Star,
         route = Screen.MyCourses.route
+    ),
+    BottomNavItem(
+        title = "Profile",
+        icon = Icons.Default.Person,
+        route = Screen.Profile.route
     )
 )

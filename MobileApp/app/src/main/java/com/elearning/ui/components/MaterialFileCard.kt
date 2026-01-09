@@ -97,7 +97,7 @@ fun MaterialFileCard(material: CourseMaterial) {
                         tint = MaterialTheme.colorScheme.outline
                     )
                     Text(
-                        text = "By ${material.uploadedBy}",
+                        text = "Uploaded ${material.uploadedAt}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -115,4 +115,3 @@ private fun formatFileSize(bytes: Long): String {
         else -> "${df.format(bytes / (1024.0 * 1024.0))} MB"
     }
 }
-

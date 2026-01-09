@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -140,9 +141,9 @@ fun CourseListScreen(
                     items(filteredCourses) { course ->
                         CourseCard(
                             course = course,
-                            onClick = { onCourseClick(course.id) },
+                            onClick = { onCourseClick(course.id.toString()) },
                             onChatClick = if (course.isEnrolled) {
-                                { onChatClick(course.id) }
+                                { onChatClick(course.id.toString()) }
                             } else null
                         )
                     }
@@ -180,7 +181,7 @@ fun SearchBar(
         navigationIcon = {
             IconButton(onClick = onClose) {
                 Icon(
-                    Icons.Default.ArrowBack,
+                    Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Close search",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )

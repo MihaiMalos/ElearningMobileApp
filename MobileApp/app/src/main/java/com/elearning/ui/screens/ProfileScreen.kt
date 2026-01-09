@@ -9,26 +9,140 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-
-data class User(val name: String, val email: String, val role: UserRole)
-enum class UserRole { TEACHER, STUDENT }
-
-fun getCurrentUser(): User {
-    // Replace with actual data source or API call in production
-    return User("John Doe", "john.doe@email.com", UserRole.TEACHER)
-}
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.elearning.ui.data.model.User
+import com.elearning.ui.viewmodel.AuthViewModel
+import androidx.compose.foundation.text.KeyboardOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
 ) {
-    val currentUser = getCurrentUser()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
+    if (isLoggedIn) {
+        UserProfileContent(
+            user = currentUser,
+            onBackClick = onBackClick,
+            onLogout = { viewModel.logout() }
+        )
+    } else {
+        LoginContent(
+            isLoading = isLoading,
+            error = error,
+            onBackClick = onBackClick,
+            onLogin = { u, p -> viewModel.login(u, p) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginContent(
+    isLoading: Boolean,
+    error: String?,
+    onBackClick: () -> Unit,
+    onLogin: (String, String) -> Unit
+) {
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Login") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Welcome Back",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (error != null) {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = { onLogin(username, password) },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                enabled = !isLoading && username.isNotBlank() && password.isNotBlank()
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Login")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UserProfileContent(
+    user: User?,
+    onBackClick: () -> Unit,
+    onLogout: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -85,30 +199,37 @@ fun ProfileScreen(
                         }
                     }
 
-                    Text(
-                        text = currentUser.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    if (user != null) {
+                        Text(
+                            text = user.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
 
-                    Text(
-                        text = currentUser.email,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-
-                    AssistChip(
-                        onClick = { },
-                        label = { Text(currentUser.role.name) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
+                        Text(
+                            text = user.email,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                        
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(user.role.name) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    } else {
+                        Text(
+                            "Loading profile...",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
             }
 
@@ -136,7 +257,7 @@ fun ProfileScreen(
                     ProfileOption(
                         icon = Icons.AutoMirrored.Filled.ExitToApp,
                         title = "Logout",
-                        onClick = { },
+                        onClick = onLogout,
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

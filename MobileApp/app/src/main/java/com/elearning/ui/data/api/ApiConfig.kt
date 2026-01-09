@@ -1,5 +1,7 @@
 package com.elearning.ui.data.api
 
+import com.elearning.ui.data.local.TokenManager
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -12,14 +14,36 @@ import java.util.concurrent.TimeUnit
  */
 object ApiConfig {
 
-    // TODO: Replace with actual backend URL
-    private const val BASE_URL = "http://localhost:8000/api/"
+
+    private const val BASE_URL = "http://10.0.2.2:8000/api/v1/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
+    
+    private val authInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val token = TokenManager.getToken()
+        
+        val newRequest = if (token != null) {
+            val tokenType = TokenManager.getTokenType()
+            // Capitalize Bearer if strictly needed, but backend usually handles case-insensitive scheme 
+            // or expects specific casing. FastAPI OAuth2 uses "Bearer".
+            // Backend returns "bearer" (lowercase).
+            // Let's ensure the header is constructed correctly.
+            // Typically: "Bearer <token>"
+            val capitalizedType = tokenType.replaceFirstChar { it.uppercase() }
+            request.newBuilder()
+                .addHeader("Authorization", "$capitalizedType $token")
+                .build()
+        } else {
+            request
+        }
+        chain.proceed(newRequest)
+    }
 
     private val client = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -34,4 +58,3 @@ object ApiConfig {
 
     val apiService: ApiService = retrofit.create(ApiService::class.java)
 }
-

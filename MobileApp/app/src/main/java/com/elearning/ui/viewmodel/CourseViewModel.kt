@@ -2,13 +2,17 @@ package com.elearning.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elearning.ui.data.api.ApiConfig
+import com.elearning.ui.data.local.TokenManager
 import com.elearning.ui.data.model.Course
-import com.elearning.ui.data.repository.DataInitializer
+import com.elearning.ui.data.repository.CourseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class CourseViewModel : ViewModel() {
+
+    private val repository = CourseRepository(ApiConfig.apiService)
 
     private val _courses = MutableStateFlow<List<Course>>(emptyList())
     val courses: StateFlow<List<Course>> = _courses
@@ -21,6 +25,10 @@ class CourseViewModel : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory
+    
+    // Error state
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
 
     init {
         loadCourses()
@@ -29,14 +37,36 @@ class CourseViewModel : ViewModel() {
     fun loadCourses() {
         viewModelScope.launch {
             _isLoading.value = true
-            // Simulate loading courses from data source
-            _courses.value = DataInitializer.mockCourses
+            _error.value = null
+            
+            // 1. Fetch Courses
+            val coursesResult = repository.getCourses()
+            var fetchedCourses = coursesResult.getOrElse {
+                _error.value = "Failed to load courses: ${it.message}"
+                emptyList()
+            }
+            
+            // 2. If logged in, fetch enrollments to mark courses as enrolled
+            if (TokenManager.getToken() != null && fetchedCourses.isNotEmpty()) {
+                val enrollmentsResult = repository.getUserEnrollments()
+                val enrollments = enrollmentsResult.getOrNull() ?: emptyList()
+                val enrolledCourseIds = enrollments.map { it.courseId }.toSet()
+                
+                fetchedCourses = fetchedCourses.map { course ->
+                    course.copy(isEnrolled = enrolledCourseIds.contains(course.id))
+                }
+            }
+            
+            _courses.value = fetchedCourses
             _isLoading.value = false
         }
     }
 
     fun searchCourses(query: String) {
         _searchQuery.value = query
+        // Optional: Call server search
+        // viewModelScope.launch { repository.getCourses(search = query) ... }
+        // For now, keep local filtering as per previous logic logic
     }
 
     fun filterByCategory(category: String?) {
@@ -50,8 +80,8 @@ class CourseViewModel : ViewModel() {
         if (_searchQuery.value.isNotBlank()) {
             filtered = filtered.filter { course ->
                 course.title.contains(_searchQuery.value, ignoreCase = true) ||
-                course.description.contains(_searchQuery.value, ignoreCase = true) ||
-                course.teacherName.contains(_searchQuery.value, ignoreCase = true)
+                (course.description?.contains(_searchQuery.value, ignoreCase = true) == true) ||
+                (course.teacherName?.contains(_searchQuery.value, ignoreCase = true) == true)
             }
         }
 
@@ -64,10 +94,24 @@ class CourseViewModel : ViewModel() {
     }
 
     fun getCategories(): List<String> {
-        return listOf("All") + _courses.value.map { it.category }.distinct().sorted()
+        return listOf("All") + _courses.value.mapNotNull { it.category }.distinct().sorted()
     }
 
     fun getMyEnrolledCourses(): List<Course> {
         return _courses.value.filter { it.isEnrolled }
+    }
+    
+    fun enrollInCourse(courseId: Int) {
+        viewModelScope.launch {
+             _isLoading.value = true
+             val result = repository.enrollInCourse(courseId)
+             if (result.isSuccess) {
+                 // Refresh list to update UI
+                 loadCourses()
+             } else {
+                 _error.value = "Enrollment failed: ${result.exceptionOrNull()?.message}"
+             }
+             _isLoading.value = false
+        }
     }
 }

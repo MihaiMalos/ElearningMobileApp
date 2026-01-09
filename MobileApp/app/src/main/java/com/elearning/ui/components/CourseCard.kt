@@ -3,6 +3,7 @@ package com.elearning.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -59,7 +60,7 @@ fun CourseCard(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = course.teacherName,
+                            text = course.teacherName ?: "Unknown Teacher",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
@@ -91,7 +92,7 @@ fun CourseCard(
 
             // Description
             Text(
-                text = course.description,
+                text = course.description ?: "No description available",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 maxLines = 3,
@@ -103,7 +104,7 @@ fun CourseCard(
             // Category chip
             SuggestionChip(
                 onClick = { },
-                label = { Text(course.category) },
+                label = { Text(course.category ?: "Uncategorized") },
                 icon = {
                     Icon(
                         Icons.Default.Add,
@@ -151,7 +152,7 @@ fun CourseCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            Icons.Default.List,
+                            Icons.AutoMirrored.Filled.List,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.outline

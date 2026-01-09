@@ -8,20 +8,19 @@ import com.elearning.ui.data.model.*
  */
 object DataInitializer {
     private val currentUser = User(
-        id = "user1",
+        id = 1,
         email = "student@example.com",
         name = "John Doe",
         role = UserRole.STUDENT,
-        avatarUrl = null,
         createdAt = "2024-01-15T10:00:00Z"
     )
 
     val mockCourses = listOf(
         Course(
-            id = "1",
+            id = 1,
             title = "Introduction to Machine Learning",
             description = "Learn the fundamentals of machine learning, including supervised and unsupervised learning algorithms, neural networks, and practical applications.",
-            teacherId = "teacher1",
+            teacherId = 1,
             teacherName = "Dr. Sarah Johnson",
             imageUrl = null,
             category = "Computer Science",
@@ -31,10 +30,10 @@ object DataInitializer {
             isEnrolled = true
         ),
         Course(
-            id = "2",
+            id = 2,
             title = "Web Development with FastAPI",
             description = "Master modern web development using FastAPI, PostgreSQL, and build production-ready REST APIs with authentication and database integration.",
-            teacherId = "teacher2",
+            teacherId = 2,
             teacherName = "Prof. Michael Chen",
             imageUrl = null,
             category = "Web Development",
@@ -44,10 +43,10 @@ object DataInitializer {
             isEnrolled = true
         ),
         Course(
-            id = "3",
+            id = 3,
             title = "Data Structures and Algorithms",
             description = "Deep dive into essential data structures and algorithms. Learn to solve complex problems efficiently and ace technical interviews.",
-            teacherId = "teacher1",
+            teacherId = 1,
             teacherName = "Dr. Sarah Johnson",
             imageUrl = null,
             category = "Computer Science",
@@ -57,10 +56,10 @@ object DataInitializer {
             isEnrolled = false
         ),
         Course(
-            id = "4",
+            id = 4,
             title = "Android Development with Jetpack Compose",
             description = "Build modern Android applications using Jetpack Compose, MVVM architecture, and Material Design 3.",
-            teacherId = "teacher3",
+            teacherId = 3,
             teacherName = "Jane Smith",
             imageUrl = null,
             category = "Mobile Development",
@@ -70,10 +69,10 @@ object DataInitializer {
             isEnrolled = true
         ),
         Course(
-            id = "5",
+            id = 5,
             title = "Natural Language Processing",
             description = "Explore NLP techniques, from text preprocessing to advanced transformer models like BERT and GPT.",
-            teacherId = "teacher2",
+            teacherId = 2,
             teacherName = "Prof. Michael Chen",
             imageUrl = null,
             category = "Artificial Intelligence",
@@ -87,51 +86,46 @@ object DataInitializer {
     val mockMaterials = mapOf(
         "1" to listOf(
             CourseMaterial(
-                id = "m1",
-                courseId = "1",
+                id = 1,
+                courseId = 1,
                 fileName = "Introduction_to_ML.pdf",
-                fileType = FileType.PDF,
+                mimeType = "application/pdf",
                 fileSize = 2048576,
-                uploadedAt = "2024-01-10T10:00:00Z",
-                uploadedBy = "Dr. Sarah Johnson"
+                uploadedAt = "2024-01-10T10:00:00Z"
             ),
             CourseMaterial(
-                id = "m2",
-                courseId = "1",
+                id = 2,
+                courseId = 1,
                 fileName = "Linear_Regression_Notes.txt",
-                fileType = FileType.TXT,
+                mimeType = "text/plain",
                 fileSize = 15360,
-                uploadedAt = "2024-01-11T14:30:00Z",
-                uploadedBy = "Dr. Sarah Johnson"
+                uploadedAt = "2024-01-11T14:30:00Z"
             ),
             CourseMaterial(
-                id = "m3",
-                courseId = "1",
+                id = 3,
+                courseId = 1,
                 fileName = "Neural_Networks_Guide.pdf",
-                fileType = FileType.PDF,
+                mimeType = "application/pdf",
                 fileSize = 3145728,
-                uploadedAt = "2024-01-12T09:00:00Z",
-                uploadedBy = "Dr. Sarah Johnson"
+                uploadedAt = "2024-01-12T09:00:00Z"
             )
         ),
         "2" to listOf(
             CourseMaterial(
-                id = "m4",
-                courseId = "2",
+                id = 4,
+                courseId = 2,
                 fileName = "FastAPI_Basics.pdf",
-                fileType = FileType.PDF,
+                mimeType = "application/pdf",
                 fileSize = 1572864,
-                uploadedAt = "2024-01-12T10:00:00Z",
-                uploadedBy = "Prof. Michael Chen"
+                uploadedAt = "2024-01-12T10:00:00Z"
             ),
             CourseMaterial(
-                id = "m5",
-                courseId = "2",
+                id = 5,
+                courseId = 2,
                 fileName = "Database_Design.txt",
-                fileType = FileType.TXT,
+                mimeType = "text/plain",
                 fileSize = 8192,
-                uploadedAt = "2024-01-13T11:00:00Z",
-                uploadedBy = "Prof. Michael Chen"
+                uploadedAt = "2024-01-13T11:00:00Z"
             )
         )
     )
