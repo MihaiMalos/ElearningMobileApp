@@ -1,0 +1,93 @@
+% filepath: documentation_final.tex
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[romanian]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+
+% Configurare layout pagină
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\onehalfspacing
+
+% Configurare stil cod
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+\definecolor{codeblue}{rgb}{0.0,0.0,0.6}
+
+\lstdefinestyle{simplecode}{
+	backgroundcolor=\color{backcolour},   
+	basicstyle=\ttfamily\small,
+	commentstyle=\color{codegray},
+	keywordstyle=\color{codeblue},
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2,
+	frame=single,
+	rulecolor=\color{codegray}
+}
+\lstset{style=simplecode}
+
+\title{\textbf{Documentație Tehnică}\\Platformă E-learning\\[0.5cm] Autori:\\ Ivan Cosmin-Gabriel \\ Maloș Mihai}
+\date{}
+
+\begin{document}
+	
+	\maketitle
+	\tableofcontents
+	\newpage
+	
+	\section{Introducere}
+	
+	\subsection{Descrierea temei}
+	Proiectul constă în realizarea unui sistem software distribuit dedicat procesului de învățare. Arhitectura sistemului este compusă dintr-o aplicație server care gestionează logica de business și datele, și o aplicație mobilă Android care servește drept interfață pentru utilizatori. Sistemul permite interacțiunea dintre profesori și studenți prin funcționalități precum crearea de cursuri, înscrierea studenților și distribuirea materialelor didactice. O funcționalitate centrală este reprezentată de un agent conversațional capabil să răspundă la întrebări pe baza conținutului cursurilor.
+	
+	\subsection{Justificarea alegerii tehnice}
+	Soluția tehnică a fost aleasă pentru a răspunde necesității de a avea un sistem modular și ușor de întreținut. S-a optat pentru o arhitectură bazată pe servicii web REST deoarece acest standard asigură o comunicare eficientă între server și clientul Android, independent de platformă. Utilizarea unui limbaj de programare modern pentru server permite procesarea rapidă a cererilor și integrarea facilă a bibliotecilor de inteligență artificială. Pentru stocarea datelor s-a ales o bază de date relațională, întrucât structura informațiilor academice este bine definită și necesită consistență strictă a relațiilor dintre utilizatori și cursuri.
+	
+	\section{Analiza cerințelor}
+	
+	\subsection{Cerințe funcționale}
+	Sistemul implementează un set de funcționalități menite să asigure desfășurarea activității didactice pe o perioadă determinată, precum un modul de zece săptămâni.
+	
+	Principalele funcționalități includ:
+	\begin{itemize}
+		\item \textbf{Gestiunea utilizatorilor:} Sistemul permite crearea conturilor și autentificarea securizată. Există roluri distincte pentru profesori și studenți, fiecare având drepturi specifice de acces.
+		\item \textbf{Administrarea cursurilor:} Profesorii au posibilitatea de a iniția cursuri noi, de a adăuga descrieri și de a modifica conținutul acestora.
+		\item \textbf{Înrolarea la cursuri:} Studenții pot vizualiza lista cursurilor disponibile și pot solicita înscrierea la acestea.
+		\item \textbf{Managementul resurselor:} Platforma facilitează încărcarea documentelor și a fișierelor suport pentru fiecare curs în parte.
+		\item \textbf{Asistență inteligentă:} Utilizatorii pot interoga sistemul printr-o interfață de chat pentru a obține informații specifice extrase automat din materialele de curs încărcate.
+	\end{itemize}
+	
+	\subsection{Cerințe non-funcționale}
+	Arhitectura respectă standarde de calitate care asigură buna funcționare a aplicației:
+	\begin{itemize}
+		\item \textbf{Securitatea datelor:} Accesul la resurse este permis doar pe baza unor elemente de identificare verificate. Parolele sunt stocate într-o formă criptată ireversibilă.
+		\item \textbf{Scalabilitatea:} Structura modulară permite adăugarea de noi funcționalități fără a afecta componentele existente.
+		\item \textbf{Disponibilitatea:} Serverul este proiectat să răspundă cererilor venite de la mai mulți utilizatori simultan fără blocaje.
+	\end{itemize}
+	
+	\section{Implementarea server-ului}
+	
+	Sistemul este organizat pe mai multe niveluri logice pentru a separa responsabilitățile și a simplifica procesul de dezvoltare.
+	
+	\subsection{Nivelul de interfață API}
+	Acest nivel reprezintă punctul de intrare în aplicație. Aici sunt definite rutele care pot fi apelate de clientul mobil. Fiecare rută corespunde unei acțiuni specifice și primește datele într-un format standardizat JSON. Acest nivel validează datele primite și le trimite mai departe către nivelul de servicii.
+	
+	\subsection{Nivelul de servicii}
+	Logica propriu-zisă a aplicației se află în acest nivel. Aici au loc procesările complexe, cum ar fi verificarea permisiunilor unui utilizator de a accesa un anumit fișier sau coordonarea algoritmilor de căutare inteligentă. Serviciile orchestrează fluxul de date între baza de date și interfața API.
+	
+	\subsection{Nivelul de acces la date}
+	Pentru a interacționa cu baza de date, sistemul folosește un strat intermediar de repository-uri. Aceste componente conțin codul necesar pentru executarea interogărilor de tip creare, citire, actualizare și ștergere. Această abordare izolează interogările SQL de restul codului și facilitează modificările ulterioare asupra structurii bazei de date.
+	
+	
+	
+	
+\end{document}
