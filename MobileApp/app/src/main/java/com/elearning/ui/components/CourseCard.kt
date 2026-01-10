@@ -17,6 +17,7 @@ import com.elearning.ui.data.model.Course
 @Composable
 fun CourseCard(
     course: Course,
+    enrollmentCount: Int,
     onClick: () -> Unit,
     onChatClick: (() -> Unit)? = null
 ) {
@@ -67,7 +68,6 @@ fun CourseCard(
                         )
                     }
                 }
-
                 if (course.isEnrolled) {
                     AssistChip(
                         onClick = { },
@@ -101,21 +101,6 @@ fun CourseCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Category chip
-            SuggestionChip(
-                onClick = { },
-                label = { Text(course.category ?: "Uncategorized") },
-                icon = {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             HorizontalDivider()
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -141,7 +126,7 @@ fun CourseCard(
                             tint = MaterialTheme.colorScheme.outline
                         )
                         Text(
-                            text = "${course.enrolledStudents}",
+                            text = "$enrollmentCount",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline
                         )

@@ -8,6 +8,9 @@ import com.elearning.ui.data.model.Course
 import com.elearning.ui.data.repository.CourseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CourseViewModel : ViewModel() {
@@ -29,6 +32,8 @@ class CourseViewModel : ViewModel() {
     // Error state
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    private val _enrollmentCounts = mutableMapOf<Int, MutableStateFlow<Int>>()
 
     init {
         loadCourses()
@@ -113,5 +118,35 @@ class CourseViewModel : ViewModel() {
              }
              _isLoading.value = false
         }
+    }
+
+    fun fetchTeacherName(teacherId: Int) {
+        viewModelScope.launch {
+            val result = repository.getTeacherById(teacherId)
+            if (result.isSuccess) {
+                val teacher = result.getOrNull()
+                // Update the teacherName for all courses with this teacherId
+                _courses.value = _courses.value.map { course ->
+                    if (course.teacherId == teacherId) {
+                        course.copy(teacherName = teacher?.name ?: "Unknown Teacher")
+                    } else course
+                }
+            } else {
+                _error.value = "Failed to fetch teacher name: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+
+    fun getCourseEnrollmentCount(courseId: Int): StateFlow<Int> {
+        val flow = _enrollmentCounts.getOrPut(courseId) { MutableStateFlow(0) }
+        viewModelScope.launch {
+            val result = repository.getCourseEnrollments(courseId)
+            if (result.isSuccess) {
+                flow.value = result.getOrNull()?.size ?: 0
+            } else {
+                flow.value = 0
+            }
+        }
+        return flow.asStateFlow()
     }
 }

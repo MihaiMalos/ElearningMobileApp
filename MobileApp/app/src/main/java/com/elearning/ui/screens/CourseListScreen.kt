@@ -139,8 +139,15 @@ fun CourseListScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(filteredCourses) { course ->
+                        val teacherId = course.teacherId
+                        val teacherName = course.teacherName
+                        if (teacherId != null && teacherName == null) {
+                            viewModel.fetchTeacherName(teacherId)
+                        }
+                        val enrollmentCount by viewModel.getCourseEnrollmentCount(course.id).collectAsState(0)
                         CourseCard(
                             course = course,
+                            enrollmentCount = enrollmentCount,
                             onClick = { onCourseClick(course.id.toString()) },
                             onChatClick = if (course.isEnrolled) {
                                 { onChatClick(course.id.toString()) }

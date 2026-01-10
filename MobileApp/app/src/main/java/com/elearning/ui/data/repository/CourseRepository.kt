@@ -6,6 +6,7 @@ import com.elearning.ui.data.api.EnrollmentRequest
 import com.elearning.ui.data.model.Course
 import com.elearning.ui.data.model.CourseMaterial
 import com.elearning.ui.data.model.Enrollment
+import com.elearning.ui.data.model.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -86,6 +87,32 @@ class CourseRepository(private val apiService: ApiService) {
             }
         } catch (e: Exception) {
              Result.failure(e)
+        }
+    }
+
+    suspend fun getTeacherById(teacherId: Int): Result<User> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getUserById(teacherId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to fetch teacher: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCourseEnrollments(courseId: Int): Result<List<Enrollment>> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getCourseEnrollments(courseId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to fetch course enrollments: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

@@ -59,6 +59,11 @@ interface ApiService {
     suspend fun getUserEnrollments(
     ): Response<List<Enrollment>> // Note: May need EnrollmentDetailResponse matching if fields differ
 
+    @GET("enrollments/course/{courseId}")
+    suspend fun getCourseEnrollments(
+        @Path("courseId") courseId: Int
+    ): Response<List<Enrollment>>
+
     // Course materials endpoints
     @GET("files/course/{courseId}")
     suspend fun getCourseMaterials(
@@ -82,6 +87,12 @@ interface ApiService {
     suspend fun sendChatMessage(
         @Body request: ChatRequest
     ): Response<ChatResponse>
+
+    // User endpoints
+    @GET("users/{id}")
+    suspend fun getUserById(
+        @Path("id") userId: Int
+    ): Response<User>
 }
 
 // Request/Response data classes
@@ -104,4 +115,3 @@ data class FileUploadResponse(
     @SerializedName("failed_files")
     val failedFiles: List<String> = emptyList()
 )
-

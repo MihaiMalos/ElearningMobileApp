@@ -30,6 +30,9 @@ class CourseDetailViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _enrollmentCount = MutableStateFlow(0)
+    val enrollmentCount: StateFlow<Int> = _enrollmentCount
+
     fun loadCourse(courseId: String) {
         val id = courseId.toIntOrNull()
         if (id == null) {
@@ -59,6 +62,9 @@ class CourseDetailViewModel : ViewModel() {
                 // If the user is student and not enrolled, this might fail 403.
                 loadMaterials(id)
                 
+                // 3. Load Enrollment Count
+                loadEnrollmentCount(id)
+
             } else {
                 _error.value = "Failed to load course: ${courseResult.exceptionOrNull()?.message}"
             }
@@ -100,10 +106,36 @@ class CourseDetailViewModel : ViewModel() {
                 _course.value = _course.value?.copy(isEnrolled = true)
                 // Refresh materials now that we are enrolled
                 loadMaterials(currentCourse.id)
+
+                // Refresh enrollment count
+                loadEnrollmentCount(currentCourse.id)
             } else {
                 _error.value = "Enrollment failed: ${result.exceptionOrNull()?.message}"
             }
             _isLoading.value = false
+        }
+    }
+
+    fun fetchTeacherName(teacherId: Int) {
+        viewModelScope.launch {
+            val result = repository.getTeacherById(teacherId)
+            if (result.isSuccess) {
+                val teacher = result.getOrNull()
+                _course.value = _course.value?.copy(teacherName = teacher?.name ?: "Unknown Teacher")
+            } else {
+                _error.value = "Failed to fetch teacher name: ${result.exceptionOrNull()?.message}"
+            }
+        }
+    }
+
+    fun loadEnrollmentCount(courseId: Int) {
+        viewModelScope.launch {
+            val result = repository.getCourseEnrollments(courseId)
+            if (result.isSuccess) {
+                _enrollmentCount.value = result.getOrNull()?.size ?: 0
+            } else {
+                _enrollmentCount.value = 0 // fallback on error
+            }
         }
     }
 }

@@ -117,8 +117,10 @@ fun MyCoursesScreen(
                 }
 
                 items(enrolledCourses) { course ->
+                    val enrollmentCount by viewModel.getCourseEnrollmentCount(course.id).collectAsState(0)
                     CourseCard(
                         course = course,
+                        enrollmentCount = enrollmentCount,
                         onClick = { onCourseClick(course.id.toString()) },
                         onChatClick = { /* Navigate to chat */ }
                     )

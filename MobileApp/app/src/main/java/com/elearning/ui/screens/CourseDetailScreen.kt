@@ -28,6 +28,7 @@ fun CourseDetailScreen(
     val materials by viewModel.materials.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isEnrolled by viewModel.isEnrolled.collectAsState()
+    val enrollmentCount by viewModel.enrollmentCount.collectAsState()
 
     LaunchedEffect(courseId) {
         viewModel.loadCourse(courseId)
@@ -70,6 +71,14 @@ fun CourseDetailScreen(
                 CircularProgressIndicator()
             }
         } else if (course != null) {
+            val courseVal = course
+            if (courseVal != null) {
+                val teacherId = courseVal.teacherId
+                if (teacherId != null && courseVal.teacherName == null) {
+                    viewModel.fetchTeacherName(teacherId)
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -203,7 +212,7 @@ fun CourseDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "${course!!.enrolledStudents}",
+                                    text = "$enrollmentCount",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer
