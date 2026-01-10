@@ -1,0 +1,7 @@
+# Neural Networks Introduction
+
+Neural networks differ from other machine learning algorithms because they are derived from the way the human brain works.
+
+They contain layers of interconnected nodes. Each node is a perceptron and is similar to multiple linear regression. The perceptron feeds the signal produced by a multiple linear regression into an activation function that may be nonlinear.
+
+Input Layer -> Hidden Layers -> Output Layer

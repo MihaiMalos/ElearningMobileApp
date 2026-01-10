@@ -1,0 +1,16 @@
+# Generators in Python
+
+Generators are a simple way of creating iterators. All the work we mentioned above are automatically handled by generators in Python. Simply speaking, a generator is a function that returns an object (iterator) which we can iterate over (one value at a time).
+
+def my_gen():
+    n = 1
+    print('This is printed first')
+    yield n
+
+    n += 1
+    print('This is printed second')
+    yield n
+
+    n += 1
+    print('This is printed at last')
+    yield n

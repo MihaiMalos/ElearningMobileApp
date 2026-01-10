@@ -1,0 +1,5 @@
+Documentatie/*.toc
+Documentatie/*.synctex.gz
+Documentatie/*.out
+Documentatie/*.log
+Documentatie/*.aux

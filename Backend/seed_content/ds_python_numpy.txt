@@ -1,0 +1,10 @@
+# NumPy Basics
+
+NumPy is a Python library used for working with arrays. It also has functions for working in domain of linear algebra, fourier transform, and matrices.
+
+import numpy as np
+
+arr = np.array([1, 2, 3, 4, 5])
+
+print(arr)
+print(type(arr))

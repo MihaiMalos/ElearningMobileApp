@@ -236,23 +236,6 @@ fun UserProfileContent(
             // Profile options
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    ProfileOption(
-                        icon = Icons.Default.Settings,
-                        title = "Settings",
-                        onClick = { }
-                    )
-                    HorizontalDivider()
-                    ProfileOption(
-                        icon = Icons.Default.Notifications,
-                        title = "Notifications",
-                        onClick = { }
-                    )
-                    HorizontalDivider()
-                    ProfileOption(
-                        icon = Icons.Default.Info,
-                        title = "About",
-                        onClick = { }
-                    )
                     HorizontalDivider()
                     ProfileOption(
                         icon = Icons.AutoMirrored.Filled.ExitToApp,
