@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.elearning.ui.data.api.ApiConfig
 import com.elearning.ui.data.model.Course
 import com.elearning.ui.data.model.CourseMaterial
+import com.elearning.ui.data.model.User
 import com.elearning.ui.data.repository.CourseRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,6 +42,11 @@ class CourseDetailViewModel : ViewModel() {
 
     private val _viewingMaterial = MutableStateFlow<CourseMaterial?>(null)
     val viewingMaterial: StateFlow<CourseMaterial?> = _viewingMaterial
+
+    private val _participants = MutableStateFlow<List<User>>(emptyList())
+    val participants: StateFlow<List<User>> = _participants
+    private val _isLoadingParticipants = MutableStateFlow(false)
+    val isLoadingParticipants: StateFlow<Boolean> = _isLoadingParticipants
 
     fun loadCourse(courseId: String) {
         val id = courseId.toIntOrNull()
@@ -163,6 +171,42 @@ class CourseDetailViewModel : ViewModel() {
             } else {
                 _error.value = "Failed to fetch teacher name: ${result.exceptionOrNull()?.message}"
             }
+        }
+    }
+
+    fun loadParticipants() {
+        val currentCourse = _course.value ?: return
+        if (_participants.value.isNotEmpty()) return // Already loaded
+
+        viewModelScope.launch {
+            _isLoadingParticipants.value = true
+            val participantsList = mutableListOf<User>()
+
+            // 1. Add Teacher
+            if (currentCourse.teacherId != null) {
+                // Try to use cached teacher name if we just fetched it, but we need full User object
+                // We likely fetched teacher name but not full object stored in course.
+                // Fetch teacher details
+                repository.getTeacherById(currentCourse.teacherId).getOrNull()?.let { teacher ->
+                    participantsList.add(teacher)
+                }
+            }
+
+            // 2. Fetch Students
+            val enrollmentsResult = repository.getCourseEnrollments(currentCourse.id)
+            val enrollments = enrollmentsResult.getOrNull() ?: emptyList()
+
+            val studentIds = enrollments.map { it.studentId }.distinct()
+
+            // Parallel fetch for students
+            val students = studentIds.map { studentId ->
+                async { repository.getUserById(studentId).getOrNull() }
+            }.awaitAll().filterNotNull()
+
+            participantsList.addAll(students)
+
+            _participants.value = participantsList
+            _isLoadingParticipants.value = false
         }
     }
 }

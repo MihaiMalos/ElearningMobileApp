@@ -108,18 +108,20 @@ class CourseRepository(private val apiService: ApiService) {
         }
     }
 
-    suspend fun getTeacherById(teacherId: Int): Result<User> = withContext(Dispatchers.IO) {
+    suspend fun getUserById(userId: Int): Result<User> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.getUserById(teacherId)
+            val response = apiService.getUserById(userId)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Failed to fetch teacher: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("Failed to fetch user: ${response.code()} ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
+    suspend fun getTeacherById(teacherId: Int): Result<User> = getUserById(teacherId)
 
     suspend fun getCourseEnrollments(courseId: Int): Result<List<Enrollment>> = withContext(Dispatchers.IO) {
         try {

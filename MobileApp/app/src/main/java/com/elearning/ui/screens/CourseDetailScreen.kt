@@ -1,8 +1,10 @@
 package com.elearning.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
@@ -19,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.elearning.ui.data.model.UserRole
+import androidx.compose.material.icons.filled.Face
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,9 +39,120 @@ fun CourseDetailScreen(
     val enrollmentCount by viewModel.enrollmentCount.collectAsState()
     val viewingMaterial by viewModel.viewingMaterial.collectAsState()
     val selectedMaterialContent by viewModel.selectedMaterialContent.collectAsState()
+    val participants by viewModel.participants.collectAsState()
+    val isLoadingParticipants by viewModel.isLoadingParticipants.collectAsState()
+    var showParticipants by remember { mutableStateOf(false) }
 
     LaunchedEffect(courseId) {
         viewModel.loadCourse(courseId)
+    }
+
+    if (showParticipants) {
+        Dialog(
+            onDismissRequest = { showParticipants = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Course Participants",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { showParticipants = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    if (isLoadingParticipants) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (participants.isEmpty()) {
+                         Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No participants found.")
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(participants) { user ->
+                                ListItem(
+                                    headlineContent = {
+                                        Text(
+                                            user.name,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    supportingContent = { Text(user.email) },
+                                    leadingContent = {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = if (user.role == UserRole.TEACHER)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.secondaryContainer,
+                                            modifier = Modifier.size(40.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    if (user.role == UserRole.TEACHER) Icons.Default.Person else Icons.Default.Face,
+                                                    contentDescription = null,
+                                                    tint = if (user.role == UserRole.TEACHER)
+                                                        MaterialTheme.colorScheme.onPrimary
+                                                    else
+                                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            }
+                                        }
+                                    },
+                                    trailingContent = {
+                                        AssistChip(
+                                            onClick = { },
+                                            label = { Text(user.role.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                            colors = AssistChipDefaults.assistChipColors(
+                                                containerColor = if (user.role == UserRole.TEACHER)
+                                                    MaterialTheme.colorScheme.primaryContainer
+                                                else
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                        )
+                                    },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (viewingMaterial != null) {
@@ -261,7 +376,12 @@ fun CourseDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Card(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    showParticipants = true
+                                    viewModel.loadParticipants()
+                                },
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.tertiaryContainer
                             )
