@@ -29,6 +29,8 @@ class CourseDetailViewModel : ViewModel() {
     private val _isEnrolled = MutableStateFlow(false)
     val isEnrolled: StateFlow<Boolean> = _isEnrolled
     
+    private val _currentEnrollmentId = MutableStateFlow<Int?>(null)
+
     // Error state
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -98,11 +100,17 @@ class CourseDetailViewModel : ViewModel() {
         // For MVP, fetch user enrollments and check.
         val result = repository.getUserEnrollments()
         val enrollments = result.getOrNull() ?: emptyList()
-        val isEnrolled = enrollments.any { it.courseId == courseId }
-        _isEnrolled.value = isEnrolled
-        
-        // Update the course object too for consistency
-        _course.value = _course.value?.copy(isEnrolled = isEnrolled)
+        val enrollment = enrollments.find { it.courseId == courseId }
+
+        if (enrollment != null) {
+            _isEnrolled.value = true
+            _currentEnrollmentId.value = enrollment.id
+            _course.value = _course.value?.copy(isEnrolled = true)
+        } else {
+            _isEnrolled.value = false
+            _currentEnrollmentId.value = null
+            _course.value = _course.value?.copy(isEnrolled = false)
+        }
     }
     
     private suspend fun loadMaterials(courseId: Int) {
@@ -122,12 +130,35 @@ class CourseDetailViewModel : ViewModel() {
             _isLoading.value = true
             val result = repository.enrollInCourse(currentCourse.id)
             if (result.isSuccess) {
+                val enrollment = result.getOrNull()
                 // Refresh enrollment status
                 _isEnrolled.value = true
+                _currentEnrollmentId.value = enrollment?.id
                 _course.value = _course.value?.copy(isEnrolled = true)
                 loadEnrollmentCount(currentCourse.id)
             } else {
                 _error.value = "Enrollment failed: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun unenrollFromCourse() {
+        val enrollmentId = _currentEnrollmentId.value ?: return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.unenroll(enrollmentId)
+            if (result.isSuccess) {
+                _isEnrolled.value = false
+                _currentEnrollmentId.value = null
+                _course.value = _course.value?.copy(isEnrolled = false)
+                val currentCourseId = _course.value?.id
+                if (currentCourseId != null) {
+                    loadEnrollmentCount(currentCourseId)
+                }
+            } else {
+                _error.value = "Failed to unenroll: ${result.exceptionOrNull()?.message}"
             }
             _isLoading.value = false
         }

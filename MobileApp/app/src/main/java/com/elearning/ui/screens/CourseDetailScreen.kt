@@ -502,6 +502,29 @@ fun CourseDetailScreen(
                             Text("Enroll in This Course", style = MaterialTheme.typography.titleMedium)
                         }
                     }
+                } else {
+                    // Check if not teacher owner before showing unenroll
+                    val isTeacherOwner = com.elearning.ui.data.local.TokenManager.getUserRole() == "TEACHER" &&
+                            course?.teacherId == com.elearning.ui.data.local.TokenManager.getUserId()
+
+                    if (!isTeacherOwner) {
+                        item {
+                            OutlinedButton(
+                                onClick = { viewModel.unenrollFromCourse() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                            ) {
+                                Icon(Icons.Default.Clear, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Unenroll from Course", style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+                    }
                 }
 
                 // Course materials

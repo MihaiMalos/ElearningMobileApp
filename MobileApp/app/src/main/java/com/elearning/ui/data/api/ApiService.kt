@@ -70,6 +70,11 @@ interface ApiService {
         @Path("courseId") courseId: Int
     ): Response<List<Enrollment>>
 
+    @DELETE("enrollments/{id}")
+    suspend fun deleteEnrollment(
+        @Path("id") enrollmentId: Int
+    ): Response<Unit>
+
     // Course materials endpoints
     @GET("files/course/{courseId}")
     suspend fun getCourseMaterials(

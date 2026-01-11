@@ -175,6 +175,19 @@ class CourseRepository(private val apiService: ApiService) {
         }
     }
 
+    suspend fun unenroll(enrollmentId: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.deleteEnrollment(enrollmentId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to unenroll: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun searchStudents(query: String?): Result<List<User>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getUsers(role = "student", search = query)
