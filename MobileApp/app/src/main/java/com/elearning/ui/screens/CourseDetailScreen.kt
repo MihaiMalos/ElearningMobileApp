@@ -508,7 +508,7 @@ fun CourseDetailScreen(
                     val isTeacherOwner = com.elearning.ui.data.local.TokenManager.getUserRole() == "TEACHER" &&
                             course?.teacherId == com.elearning.ui.data.local.TokenManager.getUserId()
 
-                    if (!isTeacherOwner) {
+                    if (!isTeacherOwner && !isTeacher) {
                         item {
                             OutlinedButton(
                                 onClick = { viewModel.unenrollFromCourse() },
@@ -567,11 +567,13 @@ fun CourseDetailScreen(
                         }
                     }
                 } else {
+                    val isTeacherOwner = com.elearning.ui.data.local.TokenManager.getUserRole() == "TEACHER" &&
+                            course?.teacherId == com.elearning.ui.data.local.TokenManager.getUserId()
                     items(materials) { material ->
                         MaterialFileCard(
                             material = material,
                             onClick = {
-                                if (isEnrolled) {
+                                if (isEnrolled || isTeacherOwner) {
                                     viewModel.viewMaterial(material)
                                 }
                             }
