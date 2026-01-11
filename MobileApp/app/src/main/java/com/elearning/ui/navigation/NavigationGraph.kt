@@ -71,6 +71,9 @@ fun NavigationGraph(navController: NavHostController) {
                 viewModel = viewModel,
                 onCourseClick = { courseId ->
                     navController.navigate(Screen.CourseDetail.createRoute(courseId))
+                },
+                onChatClick = { courseId -> // Add navigation callback
+                    navController.navigate(Screen.Chat.createRoute(courseId))
                 }
             )
         }

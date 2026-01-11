@@ -19,7 +19,8 @@ import com.elearning.ui.viewmodel.CourseViewModel
 @Composable
 fun MyCoursesScreen(
     viewModel: CourseViewModel,
-    onCourseClick: (String) -> Unit
+    onCourseClick: (String) -> Unit,
+    onChatClick: (String) -> Unit // Add onChatClick callback
 ) {
     val courses by viewModel.courses.collectAsState()
     val isTeacher by viewModel.isTeacher.collectAsState()
@@ -189,7 +190,7 @@ fun MyCoursesScreen(
                         course = course,
                         enrollmentCount = enrollmentCount,
                         onClick = { onCourseClick(course.id.toString()) },
-                        onChatClick = if (!isTeacher) { { /* Navigate to chat */ } } else null,
+                        onChatClick = if (!isTeacher) { { onChatClick(course.id.toString()) } } else null,
                         onDeleteClick = if (isTeacher) { { courseToDeleteId = course.id } } else null
                     )
                 }

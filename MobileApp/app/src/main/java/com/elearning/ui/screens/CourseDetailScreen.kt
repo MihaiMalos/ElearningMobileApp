@@ -486,7 +486,7 @@ fun CourseDetailScreen(
                 }
 
                 // Enrollment button
-                if (!isEnrolled) {
+                if (!isEnrolled && !isTeacher) {
                     item {
                         Button(
                             onClick = { viewModel.enrollInCourse() },
