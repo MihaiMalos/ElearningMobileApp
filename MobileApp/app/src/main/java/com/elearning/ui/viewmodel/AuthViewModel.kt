@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.elearning.ui.data.api.ApiConfig
 import com.elearning.ui.data.model.User
 import com.elearning.ui.data.repository.AuthRepository
+import com.elearning.ui.data.local.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -38,7 +39,12 @@ class AuthViewModel : ViewModel() {
             viewModelScope.launch {
                 val result = repository.getCurrentUser()
                 if (result.isSuccess) {
-                    _currentUser.value = result.getOrNull()
+                    val user = result.getOrNull()
+                    _currentUser.value = user
+                    user?.let {
+                        TokenManager.saveUserId(it.id)
+                        TokenManager.saveUserRole(it.role.name)
+                    }
                 } else {
                      // Token might be invalid or expired.
                      // Optionally logout if 401, but for now just don't set user
@@ -58,7 +64,12 @@ class AuthViewModel : ViewModel() {
                 _error.value = null
                 // Fetch user details immediately
                 val userResult = repository.getCurrentUser()
-                _currentUser.value = userResult.getOrNull()
+                val user = userResult.getOrNull()
+                _currentUser.value = user
+                user?.let {
+                    TokenManager.saveUserId(it.id)
+                    TokenManager.saveUserRole(it.role.name)
+                }
             } else {
                 _error.value = result.exceptionOrNull()?.message ?: "Login failed"
             }

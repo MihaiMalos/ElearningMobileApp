@@ -23,6 +23,22 @@ object TokenManager {
             .apply()
     }
 
+    fun saveUserRole(role: String) {
+        prefs.edit().putString(KEY_USER_ROLE, role).apply()
+    }
+
+    fun getUserRole(): String? {
+        return prefs.getString(KEY_USER_ROLE, null)
+    }
+
+    fun saveUserId(id: Int) {
+        prefs.edit().putInt(KEY_USER_ID, id).apply()
+    }
+
+    fun getUserId(): Int {
+        return prefs.getInt(KEY_USER_ID, -1)
+    }
+
     fun getToken(): String? {
         return prefs.getString(KEY_ACCESS_TOKEN, null)
     }

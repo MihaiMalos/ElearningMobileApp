@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.elearning.ui.data.api.ApiConfig
 import com.elearning.ui.data.local.TokenManager
 import com.elearning.ui.data.model.Course
+import com.elearning.ui.data.model.User
+import com.elearning.ui.data.model.UserRole
 import com.elearning.ui.data.repository.CourseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,8 +32,24 @@ class CourseViewModel : ViewModel() {
 
     private val _enrollmentCounts = mutableMapOf<Int, MutableStateFlow<Int>>()
 
+    // Teacher specific state
+    private val _isTeacher = MutableStateFlow(false)
+    val isTeacher: StateFlow<Boolean> = _isTeacher
+
+    // Student search state
+    private val _studentSearchResults = MutableStateFlow<List<User>>(emptyList())
+    val studentSearchResults: StateFlow<List<User>> = _studentSearchResults
+    private val _isSearchingStudents = MutableStateFlow(false)
+    val isSearchingStudents: StateFlow<Boolean> = _isSearchingStudents
+
     init {
+        checkUserRole()
         loadCourses()
+    }
+
+    private fun checkUserRole() {
+        val role = TokenManager.getUserRole()
+        _isTeacher.value = role == UserRole.TEACHER.name
     }
 
     fun loadCourses() {
@@ -46,14 +64,25 @@ class CourseViewModel : ViewModel() {
                 emptyList()
             }
             
-            // 2. If logged in, fetch enrollments to mark courses as enrolled
-            if (TokenManager.getToken() != null && fetchedCourses.isNotEmpty()) {
-                val enrollmentsResult = repository.getUserEnrollments()
-                val enrollments = enrollmentsResult.getOrNull() ?: emptyList()
-                val enrolledCourseIds = enrollments.map { it.courseId }.toSet()
-                
-                fetchedCourses = fetchedCourses.map { course ->
-                    course.copy(isEnrolled = enrolledCourseIds.contains(course.id))
+            // 2. If logged in, fetch enrollments
+            if (TokenManager.getToken() != null) {
+                if (_isTeacher.value) {
+                    val userId = TokenManager.getUserId()
+                    // If teacher, filter courses where they are the owner/teacher
+                    fetchedCourses = fetchedCourses.map { course ->
+                         // We assume teacherId is consistent with userId for ownership
+                         // Some backends might not return teacherId on course list, but let's assume it does
+                         course
+                    }
+                } else {
+                    // If student, mark enrolled courses
+                    val enrollmentsResult = repository.getUserEnrollments()
+                    val enrollments = enrollmentsResult.getOrNull() ?: emptyList()
+                    val enrolledCourseIds = enrollments.map { it.courseId }.toSet()
+
+                    fetchedCourses = fetchedCourses.map { course ->
+                        course.copy(isEnrolled = enrolledCourseIds.contains(course.id))
+                    }
                 }
             }
             
@@ -82,7 +111,14 @@ class CourseViewModel : ViewModel() {
     }
 
     fun getMyEnrolledCourses(): List<Course> {
-        return _courses.value.filter { it.isEnrolled }
+        return if (_isTeacher.value) {
+            // For teacher, show created courses
+            val userId = TokenManager.getUserId()
+            _courses.value.filter { it.teacherId == userId }
+        } else {
+            // For student, show enrolled courses
+            _courses.value.filter { it.isEnrolled }
+        }
     }
     
     fun enrollInCourse(courseId: Int) {
@@ -96,6 +132,64 @@ class CourseViewModel : ViewModel() {
                  _error.value = "Enrollment failed: ${result.exceptionOrNull()?.message}"
              }
              _isLoading.value = false
+        }
+    }
+
+    fun createCourse(title: String, description: String?) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.createCourse(title, description)
+            if (result.isSuccess) {
+                loadCourses() // Refresh list
+            } else {
+                _error.value = "Failed to create course: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun deleteCourse(courseId: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.deleteCourse(courseId)
+            if (result.isSuccess) {
+                loadCourses() // Refresh list
+            } else {
+                _error.value = "Failed to delete course: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun searchStudentsToEnroll(query: String) {
+        viewModelScope.launch {
+            _isSearchingStudents.value = true
+            val result = repository.searchStudents(query)
+            if (result.isSuccess) {
+                _studentSearchResults.value = result.getOrNull() ?: emptyList()
+            } else {
+                // handle error silently or clear list
+                _studentSearchResults.value = emptyList()
+            }
+            _isSearchingStudents.value = false
+        }
+    }
+
+    fun clearStudentSearch() {
+        _studentSearchResults.value = emptyList()
+    }
+
+    fun enrollStudentInCourse(courseId: Int, studentId: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.enrollStudentInCourse(courseId, studentId)
+            if (result.isSuccess) {
+                // Success message?
+                loadCourses() // Refresh mainly to trigger any updates if needed
+            } else {
+                _error.value = "Failed to enroll student: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
         }
     }
 

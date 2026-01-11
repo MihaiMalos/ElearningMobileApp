@@ -22,14 +22,18 @@ fun MyCoursesScreen(
     onCourseClick: (String) -> Unit
 ) {
     val courses by viewModel.courses.collectAsState()
+    val isTeacher by viewModel.isTeacher.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadCourses()
     }
 
-    val enrolledCourses = remember(courses) {
+    val myCourses = remember(courses, isTeacher) {
         viewModel.getMyEnrolledCourses()
     }
+
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var courseToDeleteId by remember { mutableStateOf<Int?>(null) }
 
     Scaffold(
         topBar = {
@@ -52,9 +56,57 @@ fun MyCoursesScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
+        },
+        floatingActionButton = {
+            if (isTeacher) {
+                FloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Create Course")
+                }
+            }
         }
     ) { padding ->
-        if (enrolledCourses.isEmpty()) {
+        if (showCreateDialog) {
+            CreateCourseDialog(
+                onDismiss = { showCreateDialog = false },
+                onCreate = { title, desc ->
+                    viewModel.createCourse(title, desc)
+                    showCreateDialog = false
+                }
+            )
+        }
+
+        if (courseToDeleteId != null) {
+            AlertDialog(
+                onDismissRequest = { courseToDeleteId = null },
+                title = { Text("Delete Course") },
+                text = { Text("Are you sure you want to delete this course? This action cannot be undone.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            courseToDeleteId?.let { id ->
+                                viewModel.deleteCourse(id)
+                            }
+                            courseToDeleteId = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { courseToDeleteId = null }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        if (myCourses.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -73,12 +125,12 @@ fun MyCoursesScreen(
                         tint = MaterialTheme.colorScheme.outline
                     )
                     Text(
-                        "No enrolled courses yet",
+                        if (isTeacher) "No courses created yet" else "No enrolled courses yet",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.outline
                     )
                     Text(
-                        "Start learning by enrolling in courses!",
+                        if (isTeacher) "Start by creating a new course!" else "Start learning by enrolling in courses!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -113,7 +165,10 @@ fun MyCoursesScreen(
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                             Text(
-                                "You're enrolled in ${enrolledCourses.size} course${if (enrolledCourses.size > 1) "s" else ""}",
+                                if (isTeacher)
+                                    "You have created ${myCourses.size} course${if (myCourses.size != 1) "s" else ""}"
+                                else
+                                    "You're enrolled in ${myCourses.size} course${if (myCourses.size != 1) "s" else ""}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
@@ -121,16 +176,77 @@ fun MyCoursesScreen(
                     }
                 }
 
-                items(enrolledCourses) { course ->
+                items(myCourses) { course ->
+                    // Fix for "Unknown Teacher": Fetch teacher name if missing
+                    val teacherId = course.teacherId
+                    val teacherName = course.teacherName
+                    if (teacherName == null) {
+                        viewModel.fetchTeacherName(teacherId)
+                    }
+
                     val enrollmentCount by viewModel.getCourseEnrollmentCount(course.id).collectAsState(0)
                     CourseCard(
                         course = course,
                         enrollmentCount = enrollmentCount,
                         onClick = { onCourseClick(course.id.toString()) },
-                        onChatClick = { /* Navigate to chat */ }
+                        onChatClick = if (!isTeacher) { { /* Navigate to chat */ } } else null,
+                        onDeleteClick = if (isTeacher) { { courseToDeleteId = course.id } } else null
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+fun CreateCourseDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String, String) -> Unit,
+    initialTitle: String = "", // Added defaults
+    initialDescription: String = "" // Added defaults
+) {
+    var title by remember { mutableStateOf(initialTitle) }
+    var description by remember { mutableStateOf(initialDescription) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initialTitle.isEmpty()) "Create New Course" else "Edit Course") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Course Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Course Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 5,
+                    leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onCreate(title, description) },
+                enabled = title.isNotBlank()
+            ) {
+                Text(if (initialTitle.isEmpty()) "Create" else "Update")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

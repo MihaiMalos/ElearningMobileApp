@@ -48,6 +48,11 @@ class CourseDetailViewModel : ViewModel() {
     private val _isLoadingParticipants = MutableStateFlow(false)
     val isLoadingParticipants: StateFlow<Boolean> = _isLoadingParticipants
 
+    private val _studentSearchResults = MutableStateFlow<List<User>>(emptyList())
+    val studentSearchResults: StateFlow<List<User>> = _studentSearchResults
+    private val _isSearchingStudents = MutableStateFlow(false)
+    val isSearchingStudents: StateFlow<Boolean> = _isSearchingStudents
+
     fun loadCourse(courseId: String) {
         val id = courseId.toIntOrNull()
         if (id == null) {
@@ -135,6 +140,36 @@ class CourseDetailViewModel : ViewModel() {
          }
     }
 
+    fun enrollStudent(courseId: Int, studentId: Int) {
+         viewModelScope.launch {
+             _isLoadingParticipants.value = true
+             val result = repository.enrollStudentInCourse(courseId, studentId)
+             if (result.isSuccess) {
+                 // Refresh participants and counts
+                 loadParticipants()
+                 loadEnrollmentCount(courseId)
+             } else {
+                 _error.value = "Failed to enroll student: ${result.exceptionOrNull()?.message}"
+             }
+             _isLoadingParticipants.value = false
+         }
+    }
+
+    fun searchStudents(query: String) {
+        viewModelScope.launch {
+             _isSearchingStudents.value = true
+             val result = repository.searchStudents(query)
+             if (result.isSuccess) {
+                 _studentSearchResults.value = result.getOrNull() ?: emptyList()
+             }
+             _isSearchingStudents.value = false
+        }
+    }
+
+    fun clearStudentSearch() {
+        _studentSearchResults.value = emptyList()
+    }
+
     fun viewMaterial(material: CourseMaterial) {
         viewModelScope.launch {
             _viewingMaterial.value = material
@@ -207,6 +242,27 @@ class CourseDetailViewModel : ViewModel() {
 
             _participants.value = participantsList
             _isLoadingParticipants.value = false
+        }
+    }
+
+    fun updateCourse(title: String, description: String?) {
+        val currentCourse = _course.value ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.updateCourse(currentCourse.id, title, description)
+            if (result.isSuccess) {
+                // Update local state
+                val updated = result.getOrNull()
+                if (updated != null) {
+                    _course.value = _course.value?.copy(
+                        title = updated.title,
+                        description = updated.description
+                    )
+                }
+            } else {
+                 _error.value = "Failed to update course: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
         }
     }
 }

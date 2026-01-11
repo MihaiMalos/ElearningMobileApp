@@ -42,9 +42,23 @@ fun CourseDetailScreen(
     val participants by viewModel.participants.collectAsState()
     val isLoadingParticipants by viewModel.isLoadingParticipants.collectAsState()
     var showParticipants by remember { mutableStateOf(false) }
+    var showEnrollStudentDialog by remember { mutableStateOf(false) } // State for enroll dialog
+    var showEditDialog by remember { mutableStateOf(false) } // State for edit course dialog
 
     LaunchedEffect(courseId) {
         viewModel.loadCourse(courseId)
+    }
+
+    if (showEditDialog && course != null) {
+        CreateCourseDialog(
+            onDismiss = { showEditDialog = false },
+            onCreate = { title, desc ->
+                viewModel.updateCourse(title, desc)
+                showEditDialog = false
+            },
+            initialTitle = course!!.title,
+            initialDescription = course!!.description ?: ""
+        )
     }
 
     if (showParticipants) {
@@ -269,7 +283,7 @@ fun CourseDetailScreen(
             val courseVal = course
             if (courseVal != null) {
                 val teacherId = courseVal.teacherId
-                if (teacherId != null && courseVal.teacherName == null) {
+                if (courseVal.teacherName == null) {
                     viewModel.fetchTeacherName(teacherId)
                 }
             }
@@ -283,8 +297,15 @@ fun CourseDetailScreen(
             ) {
                 // Course header
                 item {
+                    val isTeacherOwner = com.elearning.ui.data.local.TokenManager.getUserRole() == "TEACHER" &&
+                                        course?.teacherId == com.elearning.ui.data.local.TokenManager.getUserId()
+
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = isTeacherOwner) {
+                                showEditDialog = true
+                            },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
@@ -294,12 +315,28 @@ fun CourseDetailScreen(
                                 .fillMaxWidth()
                                 .padding(20.dp)
                         ) {
-                            Text(
-                                text = course!!.title,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text(
+                                    text = course!!.title,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                if (isTeacherOwner) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = "Edit Course",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -520,4 +557,70 @@ fun CourseDetailScreen(
             }
         }
     }
+}
+
+@Composable
+fun EnrollStudentDialog(
+    onDismiss: () -> Unit,
+    onEnroll: (Int) -> Unit,
+    viewModel: CourseDetailViewModel
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val searchResults by viewModel.studentSearchResults.collectAsState()
+    val isSearching by viewModel.isSearchingStudents.collectAsState()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enroll Student") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = {
+                        searchQuery = it
+                        if (it.length > 2) {
+                             viewModel.searchStudents(it)
+                        } else {
+                             viewModel.clearStudentSearch()
+                        }
+                    },
+                    label = { Text("Search Student Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                )
+
+                if (isSearching) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                } else if (searchResults.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 200.dp)
+                    ) {
+                        items(searchResults) { student ->
+                             ListItem(
+                                 headlineContent = { Text(student.name) },
+                                 supportingContent = { Text(student.email) },
+                                 modifier = Modifier
+                                    .clickable { onEnroll(student.id) }
+                                    .fillMaxWidth()
+                             )
+                             HorizontalDivider()
+                        }
+                    }
+                } else if (searchQuery.length > 2) {
+                     Text("No students found", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

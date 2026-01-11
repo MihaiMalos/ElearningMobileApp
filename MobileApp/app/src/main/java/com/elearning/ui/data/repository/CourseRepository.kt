@@ -37,7 +37,7 @@ class CourseRepository(private val apiService: ApiService) {
             Result.failure(e)
         }
     }
-    
+
     suspend fun createCourse(title: String, description: String?): Result<Course> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.createCourse(CreateCourseRequest(title, description))
@@ -50,7 +50,20 @@ class CourseRepository(private val apiService: ApiService) {
             Result.failure(e)
         }
     }
-    
+
+    suspend fun updateCourse(courseId: Int, title: String, description: String?): Result<Course> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.updateCourse(courseId, CreateCourseRequest(title, description))
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to update course: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun enrollInCourse(courseId: Int): Result<Enrollment> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.enrollInCourse(EnrollmentRequest(courseId))
@@ -63,7 +76,7 @@ class CourseRepository(private val apiService: ApiService) {
             Result.failure(e)
         }
     }
-    
+
     suspend fun getUserEnrollments(): Result<List<Enrollment>> = withContext(Dispatchers.IO) {
          try {
             val response = apiService.getUserEnrollments()
@@ -130,6 +143,45 @@ class CourseRepository(private val apiService: ApiService) {
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Failed to fetch course enrollments: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteCourse(courseId: Int): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.deleteCourse(courseId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to delete course: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun enrollStudentInCourse(courseId: Int, studentId: Int): Result<Enrollment> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.enrollInCourse(EnrollmentRequest(courseId, studentId))
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to enroll student: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchStudents(query: String?): Result<List<User>> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.getUsers(role = "student", search = query)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Failed to search students: ${response.code()} ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

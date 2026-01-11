@@ -19,7 +19,8 @@ fun CourseCard(
     course: Course,
     enrollmentCount: Int,
     onClick: () -> Unit,
-    onChatClick: (() -> Unit)? = null
+    onChatClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null // Add delete callback
 ) {
     Card(
         modifier = Modifier
@@ -35,7 +36,7 @@ fun CourseCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header with title and enrollment badge
+            // Header with title and buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -85,6 +86,15 @@ fun CourseCard(
                             leadingIconContentColor = MaterialTheme.colorScheme.secondary
                         )
                     )
+                } else if (onDeleteClick != null) {
+                    // Show delete button for teachers
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete Course",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 

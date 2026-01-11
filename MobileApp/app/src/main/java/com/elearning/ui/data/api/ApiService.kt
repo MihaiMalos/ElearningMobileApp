@@ -44,6 +44,12 @@ interface ApiService {
         @Body course: CreateCourseRequest
     ): Response<Course>
 
+    @PUT("courses/{id}")
+    suspend fun updateCourse(
+        @Path("id") courseId: Int,
+        @Body course: CreateCourseRequest
+    ): Response<Course>
+
     @DELETE("courses/{id}")
     suspend fun deleteCourse(
         @Path("id") courseId: Int
@@ -98,6 +104,12 @@ interface ApiService {
     suspend fun getUserById(
         @Path("id") userId: Int
     ): Response<User>
+
+    @GET("users/")
+    suspend fun getUsers(
+        @Query("role") role: String? = null,
+        @Query("search") search: String? = null
+    ): Response<List<User>>
 }
 
 // Request/Response data classes
@@ -110,7 +122,10 @@ data class RegisterRequest(
 
 data class CreateCourseRequest(val title: String, val description: String?)
 
-data class EnrollmentRequest(@SerializedName("course_id") val courseId: Int)
+data class EnrollmentRequest(
+    @SerializedName("course_id") val courseId: Int,
+    @SerializedName("student_id") val studentId: Int? = null
+)
 
 data class FileUploadResponse(
     @SerializedName("uploaded_files")
