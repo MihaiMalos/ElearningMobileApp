@@ -51,9 +51,6 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             
-            // Add placeholder for bot thinking? 
-            // Simplified: just wait for response
-            
             try {
                 val response = apiService.sendChatMessage(
                     ChatRequest(

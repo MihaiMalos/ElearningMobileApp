@@ -1,15 +1,18 @@
 import os
 import shutil
+import asyncio
 from datetime import datetime
 import uuid
+from fastapi import UploadFile
 from app.database import SessionLocal, init_db
 from app.models.user import User, UserRole
 from app.models.course import Course
 from app.models.enrollment import Enrollment
 from app.models.course_material_file import CourseMaterialFile
 from app.utils.security import get_password_hash
+from app.services.file_service import file_service  # Import the service
 
-def seed_data():
+async def seed_data_async():
     db = SessionLocal()
     
     # Reset Database
@@ -54,9 +57,6 @@ def seed_data():
     for s in students: db.refresh(s)
 
     # Create Courses
-    # Teacher 1 has 3 courses
-    # Teacher 2, 3, 4 have 1 course each
-    
     courses_data = [
         {"title": "Introduction to Python", "desc": "Learn the basics of Python programming.", "teacher": teachers[0]},
         {"title": "Advanced Python", "desc": "Deep dive into Python features.", "teacher": teachers[0]},
@@ -80,7 +80,6 @@ def seed_data():
     for c in courses: db.refresh(c)
 
     # Enroll Students
-    # Distribute enrollments randomly or manually
     enrollments_data = [
         # Student 1 enrolled in 3 courses
         (students[0], courses[0]), (students[0], courses[3]), (students[0], courses[5]),
@@ -111,14 +110,6 @@ def seed_data():
     seed_content_dir = "seed_content"
 
     # Map courses to files
-    # Only mapping files for the courses we created
-    # 0: Intro to Python
-    # 1: Advanced Python
-    # 2: Data Science with Python
-    # 3: Web Dev
-    # 4: DB Design
-    # 5: ML 101
-    
     course_files_map = {
         0: ["intro_python_vars.txt", "intro_python_control.txt"],
         1: ["adv_python_decorators.txt", "adv_python_generators.txt"],
@@ -128,43 +119,72 @@ def seed_data():
         5: ["ml_101_regression.txt", "ml_101_nn.txt"]
     }
 
+    print("Processing and indexing files...")
     # Add files to courses
     for course_idx, filenames in course_files_map.items():
         if course_idx >= len(courses):
             continue
             
         course = courses[course_idx]
-        course_upload_dir = os.path.join(uploads_dir, str(course.id))
         
-        if not os.path.exists(course_upload_dir):
-            os.makedirs(course_upload_dir)
-            
         for filename in filenames:
             src_path = os.path.join(seed_content_dir, filename)
             if not os.path.exists(src_path):
                 print(f"Warning: Source file {src_path} not found.")
                 continue
 
-            file_uuid = str(uuid.uuid4())
-            # Copy file to upload dir with uuid name
-            dest_path = os.path.join(course_upload_dir, f"{file_uuid}.txt")
-            shutil.copy2(src_path, dest_path)
-            
-            file_size = os.path.getsize(dest_path)
-            
+            # Create initial DB record to get an ID
             db_file = CourseMaterialFile(
                 course_id=course.id,
-                filename=filename, # Keep readable filename in DB
+                filename="", 
                 original_filename=filename,
-                file_path=dest_path,
-                file_size=file_size,
+                file_path="", 
+                file_size=0,
                 mime_type="text/plain"
             )
             db.add(db_file)
+            db.commit() # Commit to generate ID
+            db.refresh(db_file)
+
+            # Create an UploadFile-like object or open file for the service
+            # process_and_index_file expects an UploadFile object usually, 
+            # let's mock it or adapt the calling logic.
+            # Assuming we can just pass the open file handle if the service supports it,
+            # but usually UploadFile is required by FastAPI services.
+            
+            with open(src_path, 'rb') as f:
+                # Create a mock UploadFile
+                upload_file = UploadFile(
+                    filename=filename, 
+                    file=f, 
+                    headers={"content-type": "text/plain"}
+                )
+
+                try:
+                    # Use the service to process, save, and index
+                    print(f"  Indexing {filename} for course {course.id}...")
+                    file_path, unique_filename, file_size, chunks = await file_service.process_and_index_file(  
+                        file=upload_file,
+                        course_id=course.id,
+                        file_id=db_file.id
+                    )
+                    
+                    # Update DB record
+                    db_file.filename = unique_filename
+                    db_file.file_path = file_path
+                    db_file.file_size = file_size
+                    db.commit()
+                except Exception as e:
+                    print(f"  Error processing {filename}: {e}")
+                    db.delete(db_file)
+                    db.commit()
 
     db.commit()
-    print("Database seeded successfully!")
+    print("Database seeded successfully with embeddings!")
     db.close()
+
+def seed_data():
+    asyncio.run(seed_data_async())
 
 if __name__ == "__main__":
     init_db()

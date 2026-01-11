@@ -6,7 +6,7 @@ from app.models.user import User
 from app.schemas.file import CourseMaterialFileResponse, FileUploadResponse
 from app.repositories.course_repository import CourseRepository
 from app.repositories.file_repository import CourseMaterialFileRepository
-from app.utils.security import get_current_teacher
+from app.utils.security import get_current_teacher, get_current_user
 from app.services.file_service import file_service
 from app.services.vector_store import vector_store_service
 
@@ -90,10 +90,10 @@ def list_course_materials(
     course_id: int,
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_teacher),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """List all materials for a course (teacher only)."""
+    """List all materials for a course"""
     course_repo = CourseRepository(db)
     file_repo = CourseMaterialFileRepository(db)
     
@@ -103,12 +103,6 @@ def list_course_materials(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Course not found"
-        )
-    
-    if course.teacher_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the course teacher can view materials"
         )
     
     files = file_repo.get_by_course(course_id, skip=skip, limit=limit)

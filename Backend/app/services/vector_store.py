@@ -4,7 +4,8 @@ from warnings import filters
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from llama_cloud import MetadataFilter, MetadataFilters
-from llama_index.core import Document, VectorStoreIndex, StorageContext
+# Add PromptTemplate import
+from llama_index.core import Document, VectorStoreIndex, StorageContext, PromptTemplate
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
@@ -12,6 +13,18 @@ from llama_index.llms.ollama import Ollama
 from llama_index.core import Settings
 from app.config import settings as app_settings
 
+# Define the custom prompt template
+QA_PROMPT_TEMPLATE_STR = (
+    "You are a helpful AI teaching assistant for this course. "
+    "You have access to the following course materials as context:\n"
+    "---------------------\n"
+    "{context_str}\n"
+    "---------------------\n"
+    "Given strictly this context information and no prior knowledge, answer the student's question. "
+    "If the answer is not contained in the Course Materials, politely state that you cannot find the answer in the materials.\n"
+    "Question: {query_str}\n"
+    "Answer: "
+)
 
 class VectorStoreService:
     """Service for managing vector store operations with ChromaDB."""
@@ -68,6 +81,9 @@ class VectorStoreService:
         Settings.llm = self._llm
         Settings.chunk_size = app_settings.CHUNK_SIZE
         Settings.chunk_overlap = app_settings.CHUNK_OVERLAP
+        
+        # Initialize Prompt Template
+        self._qa_template = PromptTemplate(QA_PROMPT_TEMPLATE_STR)
     
     def index_document(
         self,
@@ -156,7 +172,8 @@ class VectorStoreService:
 
         query_engine = index.as_query_engine(
             similarity_top_k=top_k,
-            filters=filters 
+            filters=filters,
+            text_qa_template=self._qa_template  # Apply the custom prompt
         )
         
         # Execute query
@@ -203,7 +220,8 @@ class VectorStoreService:
         query_engine = index.as_query_engine(
             similarity_top_k=top_k,
             filters=filters,
-            streaming=True
+            streaming=True,
+            text_qa_template=self._qa_template  # Apply the custom prompt
         )
         
         # Execute query

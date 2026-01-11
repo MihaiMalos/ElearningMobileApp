@@ -27,11 +27,6 @@ object ApiConfig {
         
         val newRequest = if (token != null) {
             val tokenType = TokenManager.getTokenType()
-            // Capitalize Bearer if strictly needed, but backend usually handles case-insensitive scheme 
-            // or expects specific casing. FastAPI OAuth2 uses "Bearer".
-            // Backend returns "bearer" (lowercase).
-            // Let's ensure the header is constructed correctly.
-            // Typically: "Bearer <token>"
             val capitalizedType = tokenType.replaceFirstChar { it.uppercase() }
             request.newBuilder()
                 .addHeader("Authorization", "$capitalizedType $token")

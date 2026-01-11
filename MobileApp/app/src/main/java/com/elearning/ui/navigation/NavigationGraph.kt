@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.elearning.ui.data.local.TokenManager
 import com.elearning.ui.screens.*
 import com.elearning.ui.viewmodel.ChatViewModel
 import com.elearning.ui.viewmodel.CourseDetailViewModel
@@ -14,9 +15,15 @@ import com.elearning.ui.viewmodel.CourseViewModel
 
 @Composable
 fun NavigationGraph(navController: NavHostController) {
+    val startDestination = if (TokenManager.getToken() != null) {
+        Screen.CourseList.route
+    } else {
+        Screen.Login.route
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Screen.CourseList.route
+        startDestination = startDestination
     ) {
         composable(Screen.CourseList.route) {
             val viewModel: CourseViewModel = viewModel()
@@ -70,9 +77,23 @@ fun NavigationGraph(navController: NavHostController) {
 
         composable(Screen.Profile.route) {
             ProfileScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.CourseList.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Screen.CourseList.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
             )
         }
     }
 }
-

@@ -6,7 +6,7 @@ from app.models.user import User
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.repositories.course_repository import CourseRepository
 from app.repositories.enrollment_repository import EnrollmentRepository
-from app.utils.security import get_current_student
+from app.utils.security import get_current_student, get_current_user
 from app.services.vector_store import vector_store_service
 
 router = APIRouter(prefix="/chat", tags=["AI Chat"])
@@ -15,11 +15,11 @@ router = APIRouter(prefix="/chat", tags=["AI Chat"])
 @router.post("/", response_model=ChatResponse)
 def chat_with_course_materials(
     chat_request: ChatRequest,
-    current_user: User = Depends(get_current_student),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Chat with course materials using RAG pipeline (students only).
+    Chat with course materials using RAG pipeline.
     Student must be enrolled in the course to chat.
     """
     course_repo = CourseRepository(db)
@@ -62,11 +62,11 @@ def chat_with_course_materials(
 @router.post("/stream")
 async def chat_with_course_materials_streaming(
     chat_request: ChatRequest,
-    current_user: User = Depends(get_current_student),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Chat with course materials using RAG pipeline with streaming response (students only).
+    Chat with course materials using RAG pipeline with streaming response.
     Student must be enrolled in the course to chat.
     """
     course_repo = CourseRepository(db)

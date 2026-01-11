@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,12 +30,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 @Composable
 fun ProfileScreen(
     onBackClick: () -> Unit,
-    viewModel: AuthViewModel = viewModel()
+    viewModel: AuthViewModel = viewModel(),
+    onNavigateToLogin: (() -> Unit)? = null
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+
+    // Check if we need to redirect to login
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn && onNavigateToLogin != null) {
+            onNavigateToLogin()
+        }
+    }
 
     if (isLoggedIn) {
         UserProfileContent(
@@ -43,13 +50,35 @@ fun ProfileScreen(
             onLogout = { viewModel.logout() }
         )
     } else {
-        LoginContent(
-            isLoading = isLoading,
-            error = error,
-            onBackClick = onBackClick,
-            onLogin = { u, p -> viewModel.login(u, p) }
-        )
+        // Fallback or empty state if we are redirecting
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Redirecting to login...")
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
+) {
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Navigate when logged in
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            onLoginSuccess()
+        }
+    }
+
+    LoginContent(
+        isLoading = isLoading,
+        error = error,
+        onLogin = { u, p -> viewModel.login(u, p) }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +86,6 @@ fun ProfileScreen(
 fun LoginContent(
     isLoading: Boolean,
     error: String?,
-    onBackClick: () -> Unit,
     onLogin: (String, String) -> Unit
 ) {
     var username by remember { mutableStateOf("") }
@@ -67,11 +95,6 @@ fun LoginContent(
         topBar = {
             TopAppBar(
                 title = { Text("Login") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
