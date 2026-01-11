@@ -130,18 +130,6 @@ fun CourseDetailScreen(
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                AssistChip(
-                                    onClick = { },
-                                    label = { Text(course!!.category ?: "Uncategorized") },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Add,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                )
-
                                 if (isEnrolled) {
                                     AssistChip(
                                         onClick = { },

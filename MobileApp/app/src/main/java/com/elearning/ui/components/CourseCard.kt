@@ -131,23 +131,6 @@ fun CourseCard(
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.List,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = "${course.materialsCount} materials",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
                 }
 
                 // Chat button for enrolled courses

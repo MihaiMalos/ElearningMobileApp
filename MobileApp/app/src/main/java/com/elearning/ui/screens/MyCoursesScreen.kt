@@ -22,6 +22,11 @@ fun MyCoursesScreen(
     onCourseClick: (String) -> Unit
 ) {
     val courses by viewModel.courses.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadCourses()
+    }
+
     val enrolledCourses = remember(courses) {
         viewModel.getMyEnrolledCourses()
     }

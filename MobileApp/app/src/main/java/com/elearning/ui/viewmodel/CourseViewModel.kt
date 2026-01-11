@@ -9,8 +9,6 @@ import com.elearning.ui.data.repository.CourseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CourseViewModel : ViewModel() {
@@ -26,9 +24,6 @@ class CourseViewModel : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    private val _selectedCategory = MutableStateFlow<String?>(null)
-    val selectedCategory: StateFlow<String?> = _selectedCategory
-    
     // Error state
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -69,13 +64,6 @@ class CourseViewModel : ViewModel() {
 
     fun searchCourses(query: String) {
         _searchQuery.value = query
-        // Optional: Call server search
-        // viewModelScope.launch { repository.getCourses(search = query) ... }
-        // For now, keep local filtering as per previous logic logic
-    }
-
-    fun filterByCategory(category: String?) {
-        _selectedCategory.value = if (_selectedCategory.value == category) null else category
     }
 
     fun getFilteredCourses(): List<Course> {
@@ -90,16 +78,7 @@ class CourseViewModel : ViewModel() {
             }
         }
 
-        // Filter by category
-        if (_selectedCategory.value != null) {
-            filtered = filtered.filter { it.category == _selectedCategory.value }
-        }
-
         return filtered
-    }
-
-    fun getCategories(): List<String> {
-        return listOf("All") + _courses.value.mapNotNull { it.category }.distinct().sorted()
     }
 
     fun getMyEnrolledCourses(): List<Course> {

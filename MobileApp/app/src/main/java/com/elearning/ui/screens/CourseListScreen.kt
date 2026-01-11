@@ -2,7 +2,6 @@ package com.elearning.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,14 +25,13 @@ fun CourseListScreen(
     val courses by viewModel.courses.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
 
-    val filteredCourses = remember(courses, searchQuery, selectedCategory) {
-        viewModel.getFilteredCourses()
+    LaunchedEffect(Unit) {
+        viewModel.loadCourses()
     }
 
-    val categories = remember(courses) {
-        viewModel.getCategories()
+    val filteredCourses = remember(courses, searchQuery) {
+        viewModel.getFilteredCourses()
     }
 
     var showSearchBar by remember { mutableStateOf(false) }
@@ -80,28 +78,6 @@ fun CourseListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Category filter
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(categories) { category ->
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { viewModel.filterByCategory(category) },
-                        label = { Text(category) },
-                        leadingIcon = if (selectedCategory == category) {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                        } else null
-                    )
-                }
-            }
-
-            HorizontalDivider()
-
             // Course list
             if (isLoading) {
                 Box(
