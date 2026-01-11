@@ -90,6 +90,24 @@ class CourseRepository(private val apiService: ApiService) {
         }
     }
 
+    suspend fun getMaterialContent(materialId: Int): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.downloadMaterial(materialId)
+            if (response.isSuccessful && response.body() != null) {
+                // Assuming text content for now based on the prompt "let me see the text content"
+                // For binary files like PDF, we'd need a different handling, but let's try to stringify it.
+                // If it's a PDF, this might produce garbage text, but the user asked for "text content".
+                // Ideally backend provides text/plain or we handle bytes.
+                // Given the `FileType` enum has PDF and TXT, let's treat it as string.
+                Result.success(response.body()!!.string())
+            } else {
+                Result.failure(Exception("Failed to download material: ${response.code()} ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getTeacherById(teacherId: Int): Result<User> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getUserById(teacherId)

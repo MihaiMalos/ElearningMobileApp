@@ -15,6 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.elearning.ui.components.MaterialFileCard
 import com.elearning.ui.viewmodel.CourseDetailViewModel
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,9 +33,85 @@ fun CourseDetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isEnrolled by viewModel.isEnrolled.collectAsState()
     val enrollmentCount by viewModel.enrollmentCount.collectAsState()
+    val viewingMaterial by viewModel.viewingMaterial.collectAsState()
+    val selectedMaterialContent by viewModel.selectedMaterialContent.collectAsState()
 
     LaunchedEffect(courseId) {
         viewModel.loadCourse(courseId)
+    }
+
+    if (viewingMaterial != null) {
+        Dialog(
+            onDismissRequest = { viewModel.closeMaterialViewer() },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = viewingMaterial!!.fileName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "Material Preview",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        IconButton(onClick = { viewModel.closeMaterialViewer() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    // Content
+                    if (selectedMaterialContent == null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(16.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = selectedMaterialContent!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -307,7 +387,14 @@ fun CourseDetailScreen(
                     }
                 } else {
                     items(materials) { material ->
-                        MaterialFileCard(material = material)
+                        MaterialFileCard(
+                            material = material,
+                            onClick = {
+                                if (isEnrolled) {
+                                    viewModel.viewMaterial(material)
+                                }
+                            }
+                        )
                     }
                 }
             }

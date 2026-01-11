@@ -33,6 +33,13 @@ class CourseDetailViewModel : ViewModel() {
     private val _enrollmentCount = MutableStateFlow(0)
     val enrollmentCount: StateFlow<Int> = _enrollmentCount
 
+    // Material Content State
+    private val _selectedMaterialContent = MutableStateFlow<String?>(null)
+    val selectedMaterialContent: StateFlow<String?> = _selectedMaterialContent
+
+    private val _viewingMaterial = MutableStateFlow<CourseMaterial?>(null)
+    val viewingMaterial: StateFlow<CourseMaterial?> = _viewingMaterial
+
     fun loadCourse(courseId: String) {
         val id = courseId.toIntOrNull()
         if (id == null) {
@@ -102,18 +109,49 @@ class CourseDetailViewModel : ViewModel() {
             _isLoading.value = true
             val result = repository.enrollInCourse(currentCourse.id)
             if (result.isSuccess) {
+                // Refresh enrollment status
                 _isEnrolled.value = true
                 _course.value = _course.value?.copy(isEnrolled = true)
-                // Refresh materials now that we are enrolled
-                loadMaterials(currentCourse.id)
-
-                // Refresh enrollment count
                 loadEnrollmentCount(currentCourse.id)
             } else {
                 _error.value = "Enrollment failed: ${result.exceptionOrNull()?.message}"
             }
             _isLoading.value = false
         }
+    }
+
+    private suspend fun loadEnrollmentCount(courseId: Int) {
+         val result = repository.getCourseEnrollments(courseId)
+         if (result.isSuccess) {
+             _enrollmentCount.value = result.getOrNull()?.size ?: 0
+         }
+    }
+
+    fun viewMaterial(material: CourseMaterial) {
+        viewModelScope.launch {
+            _viewingMaterial.value = material
+            _selectedMaterialContent.value = null // Reset while loading
+
+            // Only fetch content for text-based or potentially readable files
+            if (material.fileType == com.elearning.ui.data.model.FileType.TXT ||
+                material.fileName.endsWith(".txt", true) ||
+                material.fileName.endsWith(".md", true)) {
+
+                val result = repository.getMaterialContent(material.id)
+                if (result.isSuccess) {
+                    _selectedMaterialContent.value = result.getOrNull()
+                } else {
+                    _selectedMaterialContent.value = "Failed to load content: ${result.exceptionOrNull()?.message}"
+                }
+            } else {
+                _selectedMaterialContent.value = "Preview not available for this file type (${material.fileType}).\nThis is where we would implement a PDF viewer or download logic."
+            }
+        }
+    }
+
+    fun closeMaterialViewer() {
+        _viewingMaterial.value = null
+        _selectedMaterialContent.value = null
     }
 
     fun fetchTeacherName(teacherId: Int) {
@@ -124,17 +162,6 @@ class CourseDetailViewModel : ViewModel() {
                 _course.value = _course.value?.copy(teacherName = teacher?.name ?: "Unknown Teacher")
             } else {
                 _error.value = "Failed to fetch teacher name: ${result.exceptionOrNull()?.message}"
-            }
-        }
-    }
-
-    fun loadEnrollmentCount(courseId: Int) {
-        viewModelScope.launch {
-            val result = repository.getCourseEnrollments(courseId)
-            if (result.isSuccess) {
-                _enrollmentCount.value = result.getOrNull()?.size ?: 0
-            } else {
-                _enrollmentCount.value = 0 // fallback on error
             }
         }
     }

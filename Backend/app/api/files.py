@@ -1,11 +1,13 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.file import CourseMaterialFileResponse, FileUploadResponse
 from app.repositories.course_repository import CourseRepository
 from app.repositories.file_repository import CourseMaterialFileRepository
+from app.repositories.enrollment_repository import EnrollmentRepository
 from app.utils.security import get_current_teacher, get_current_user
 from app.services.file_service import file_service
 from app.services.vector_store import vector_store_service
@@ -107,6 +109,53 @@ def list_course_materials(
     
     files = file_repo.get_by_course(course_id, skip=skip, limit=limit)
     return files
+
+
+@router.get("/download/{file_id}")
+def download_file(
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Download a course material file content.
+    Returns the content as text/plain.
+    """
+    file_repo = CourseMaterialFileRepository(db)
+    course_repo = CourseRepository(db)
+    enrollment_repo = EnrollmentRepository(db)
+    
+    # Get file record
+    db_file = file_repo.get_by_id(file_id)
+    if not db_file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+        
+    # Check permissions
+    course = course_repo.get_by_id(db_file.course_id)
+    
+    # If teacher, must own course
+    if current_user.role == UserRole.TEACHER:
+        if course.teacher_id != current_user.id:
+                raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this file"
+            )
+    # If student, must be enrolled
+    else:
+            if not enrollment_repo.is_student_enrolled(current_user.id, course.id):
+                raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must be enrolled in this course to access materials"
+            )
+            
+    return FileResponse(
+        path=db_file.file_path, 
+        media_type="text/plain", 
+        filename=db_file.original_filename
+    )
 
 
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)

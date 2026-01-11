@@ -82,6 +82,11 @@ interface ApiService {
         @Path("id") materialId: Int
     ): Response<Unit>
 
+    @GET("files/download/{id}")
+    suspend fun downloadMaterial(
+        @Path("id") materialId: Int
+    ): Response<okhttp3.ResponseBody>
+
     // Chat endpoints
     @POST("chat/")
     suspend fun sendChatMessage(

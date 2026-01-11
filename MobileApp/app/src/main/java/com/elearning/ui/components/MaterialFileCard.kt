@@ -1,5 +1,6 @@
 package com.elearning.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -15,9 +16,14 @@ import com.elearning.ui.data.model.FileType
 import java.text.DecimalFormat
 
 @Composable
-fun MaterialFileCard(material: CourseMaterial) {
+fun MaterialFileCard(
+    material: CourseMaterial,
+    onClick: (() -> Unit)? = null
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
