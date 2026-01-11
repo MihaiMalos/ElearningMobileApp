@@ -485,6 +485,7 @@ fun CourseDetailScreen(
                     }
                 }
 
+                val isTeacher = com.elearning.ui.data.local.TokenManager.getUserRole() == "TEACHER";
                 // Enrollment button
                 if (!isEnrolled && !isTeacher) {
                     item {
