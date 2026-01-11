@@ -43,7 +43,7 @@ class CourseViewModel : ViewModel() {
     val isSearchingStudents: StateFlow<Boolean> = _isSearchingStudents
 
     init {
-        checkUserRole()
+        // Initial load
         loadCourses()
     }
 
@@ -53,6 +53,9 @@ class CourseViewModel : ViewModel() {
     }
 
     fun loadCourses() {
+        // Ensure role is up-to-date with TokenManager, as ViewModel instances might be reused
+        checkUserRole()
+
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null

@@ -60,15 +60,22 @@ class AuthViewModel : ViewModel() {
             
             val result = repository.login(username, password)
             if (result.isSuccess) {
-                _isLoggedIn.value = true
-                _error.value = null
-                // Fetch user details immediately
+                // Fetch user details immediately before confirming login success
                 val userResult = repository.getCurrentUser()
                 val user = userResult.getOrNull()
-                _currentUser.value = user
-                user?.let {
-                    TokenManager.saveUserId(it.id)
-                    TokenManager.saveUserRole(it.role.name)
+
+                if (user != null) {
+                    _currentUser.value = user
+                    TokenManager.saveUserId(user.id)
+                    TokenManager.saveUserRole(user.role.name)
+
+                    // Only set logged in result after user details are saved
+                    _isLoggedIn.value = true
+                    _error.value = null
+                } else {
+                    _error.value = "Failed to retrieve user details."
+                    // If user fetch fails, we should probably treat it as a login failure or partial state,
+                    // but for now let's just show error.
                 }
             } else {
                 _error.value = result.exceptionOrNull()?.message ?: "Login failed"

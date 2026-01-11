@@ -80,7 +80,8 @@ fun NavigationGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.CourseList.route) { inclusive = true }
+                        // Pop everything up to the root to ensure clean state
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
